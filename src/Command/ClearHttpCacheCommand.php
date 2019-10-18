@@ -9,6 +9,7 @@ use RecursiveIteratorIterator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -60,11 +61,11 @@ class ClearHttpCacheCommand extends Command
     protected function configure()
     {
         $this
-            ->setName('clear:httpCache')
-            ->setDescription('Clears the HttpCache folder')
+            ->setName('cache-clear')
+            ->setDescription('Clears the Symfony Http Cache')
             ->setHelp('This command allows you to delete the expired files from the http_cache directory')
-            ->addArgument('cache route folder', InputArgument::REQUIRED, 'What http cache folder do you want to use on the command line?')
-            ->addArgument('hours', InputArgument::REQUIRED, 'How many hours you want to keep the cache files?')
+            ->addArgument('path', InputArgument::REQUIRED, 'The path to your HttpCache cache folder, e.g. var/cache/prod/http_cache')
+            ->addOption('hours', null, InputOption::VALUE_OPTIONAL, 'How many hours you want to keep the cache files?', 4)
         ;
     }
 
@@ -75,14 +76,14 @@ class ClearHttpCacheCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->directoryPath = $input->getArgument('cache route folder');
-        $this->expirationHours = $input->getArgument('hours');
+        $this->directoryPath = $input->getArgument('path');
+        $this->expirationHours = $input->getOption('hours');
 
         // Cast the output to a property for easy outputting of information.
         $this->output = $output;
 
         if ($this->directoryPath === false) {
-            $output->writeln( '<error>HttpCache folder not found. Exiting command</error>');
+            $output->writeln( '<error>HTTP Cache folder not found. Exiting command</error>');
             exit;
         }
 
@@ -91,7 +92,7 @@ class ClearHttpCacheCommand extends Command
             exit;
         }
 
-        $output->writeln('Clearing the cache stored at' .$this->directoryPath) ;
+        $output->writeln('Clearing the HTTP Cache stored at: ' . $this->directoryPath) ;
 
         $output->writeln('==========') ;
 
@@ -192,7 +193,7 @@ class ClearHttpCacheCommand extends Command
         $output->writeln($this->deleteCount['response'] . '<info> response files deleted successfully!<info>') ;
         $output->writeln($this->deleteCount['metadata'] . '<info> metadata files deleted successfully!<info>') ;
 
-        $output->writeln('<info>Clearing the http cache complete!<info>') ;
+        $output->writeln('<info>Clearing the HTTP Cache complete!<info>') ;
 
     }
 
