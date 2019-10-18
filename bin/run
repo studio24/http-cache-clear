@@ -1,0 +1,18 @@
+#!/usr/bin/env php
+<?php
+
+use App\Command\ClearHttpCacheCommand;
+use Symfony\Component\Console\Application;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+error_reporting(E_ALL);
+ini_set('display_errors',true);
+
+$command = new ClearHttpCacheCommand();
+
+$application = new Application();
+$application->add($command);
+$application->setDefaultCommand($command->getName());
+$application->run();
+
