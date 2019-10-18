@@ -13,7 +13,7 @@ We created this small tool to help delete the expired files from Symfony's HTTP 
 Install via [Composer](https://getcomposer.org/):
 
 ```
-composer require studio24/http-clear-cache:^1.0
+composer require studio24/http-cache-clear
 ```
 
 
