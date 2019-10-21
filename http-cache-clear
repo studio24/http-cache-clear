@@ -4,10 +4,20 @@
 use App\Command\ClearHttpCacheCommand;
 use Symfony\Component\Console\Application;
 
-require __DIR__ . '/vendor/autoload.php';
-
 error_reporting(E_ALL ^ E_NOTICE);
 ini_set('display_errors',true);
+
+// Composer
+$composer = [__DIR__ . '/../../vendor/autoload.php', __DIR__ . '/../../../vendor/autoload.php', __DIR__ . '/vendor/autoload.php'];
+foreach ($composer as $file) {
+    if (file_exists($file)) {
+        require_once $file;
+        $composer = true;
+    }
+}
+if (true !== $composer) {
+    throw new \Exception('Cannot load Composer so cannot load dependencies');
+}
 
 $command = new ClearHttpCacheCommand();
 
