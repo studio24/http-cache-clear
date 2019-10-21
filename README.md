@@ -19,6 +19,12 @@ composer require studio24/http-cache-clear
 
 ## Usage
 
+Display help text:
+
+```
+http-cache-clear -h
+```
+
 The default command clears the HTTP Cache of cache files that are 4 hours or older.
 
 ```

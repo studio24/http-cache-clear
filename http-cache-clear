@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-use App\Command\ClearHttpCacheCommand;
+use Studio24\HttpCacheClear\ClearHttpCacheCommand;
 use Symfony\Component\Console\Application;
 
 error_reporting(E_ALL ^ E_NOTICE);

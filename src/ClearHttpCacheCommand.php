@@ -1,13 +1,12 @@
 <?php
 declare(strict_types = 1);
 
-namespace App\Command;
+namespace Studio24\HttpCacheClear;
 
 use Exception;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -15,37 +14,33 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class ClearHttpCacheCommand extends Command
 {
-    /**
-     * @var
-     */
+    /** @var string */
+    const HTTP_CACHE_FOLDER = 'http_cache';
+    const METADATA_FOLDER = 'md';
+    const RESPONSE_FOLDER = 'en';
+
+    /** @var OutputInterface */
     protected $output;
 
-    /**
-     * @var
-     */
+    /** @var string */
     protected $directoryPath;
 
-    /**
-     * @var
-     */
+    /** @var int */
     protected $expirationHours;
 
-    /**
-     * @array
-     */
-    protected  $deleteCount = [
+    /** @var string */
+    protected $environment;
+
+    /** @var array */
+    protected $deleteCount = [
         'response' => 0,
         'metadata' => 0
     ];
 
-    /**
-     * DateTime
-     */
+    /** @var \DateTime */
     protected $now;
 
-    /**
-     * @var
-     */
+    /** @var Filesystem */
     protected $filesystem;
 
 
@@ -63,9 +58,10 @@ class ClearHttpCacheCommand extends Command
         $this
             ->setName('cache-clear')
             ->setDescription('Clears the Symfony Http Cache')
-            ->setHelp('This command allows you to delete the expired files from the http_cache directory')
-            ->addArgument('path', InputArgument::REQUIRED, 'The path to your HttpCache cache folder, e.g. var/cache/prod/http_cache')
-            ->addOption('hours', null, InputOption::VALUE_OPTIONAL, 'How many hours you want to keep the cache files?', 4)
+            ->setHelp('This command allows you to delete the expired files from the Http Cache, when the cache is saved to the filesystem')
+            ->addOption('path', 'p', InputOption::VALUE_OPTIONAL, 'The path to your cache folder', 'var/cache')
+            ->addOption('env', 'e', InputOption::VALUE_OPTIONAL, 'Environment to clear cache for', 'prod')
+            ->addOption('expiry', null, InputOption::VALUE_OPTIONAL, 'How many hours you want to expire cache files?', 4)
         ;
     }
 
@@ -76,25 +72,30 @@ class ClearHttpCacheCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->directoryPath = $input->getArgument('path');
-        $this->expirationHours = $input->getOption('hours');
+        $this->directoryPath = $input->getOption('path');
+        $this->environment = $input->getOption('env');
+        $this->expirationHours = $input->getOption('expiry');
 
         // Cast the output to a property for easy outputting of information.
         $this->output = $output;
 
+        $this->directoryPath = realpath($this->directoryPath);
         if ($this->directoryPath === false) {
-            $output->writeln( '<error>HTTP Cache folder not found. Exiting command</error>');
-            exit;
+            throw new HttpCacheException(sprintf('Symfony Cache folder not found at %s', $input->getOption('path')));
+        }
+        $this->directoryPath .= '/' . $this->environment . '/' . self::HTTP_CACHE_FOLDER;
+        if (!is_dir($this->directoryPath)) {
+            $output->writeln( '<info>No http_cache folder found, exiting!</info>');
+            return;
         }
 
-        if ($this->expirationHours === false) {
-            $output->writeln( '<error>Number of hours not specified. Exiting command </error>');
-            exit;
+        if (!is_numeric($this->expirationHours)) {
+            throw new HttpCacheException('Expiration hours must be a number');
         }
 
         $output->writeln('Clearing the HTTP Cache stored at: ' . $this->directoryPath) ;
 
-        $output->writeln('==========') ;
+        $output->writeln('==================================') ;
 
         $directory = new RecursiveDirectoryIterator($this->directoryPath);
         $iterator = new RecursiveIteratorIterator($directory);
@@ -114,7 +115,7 @@ class ClearHttpCacheCommand extends Command
             }
 
             // Find the metadata files
-            if (strpos($fileInfo->getPathname(), '/md/') !== false) {
+            if (strpos($fileInfo->getPathname(), '/' . self::METADATA_FOLDER . '/') !== false) {
 
                 $output->writeln('Processing the metadata directory') ;
 
@@ -173,7 +174,7 @@ class ClearHttpCacheCommand extends Command
 
 
             // Find the response files
-            if (strpos($fileInfo->getPathname(), '/en/') !== false) {
+            if (strpos($fileInfo->getPathname(), '/' . self::RESPONSE_FOLDER . '/') !== false) {
 
                 $output->writeln('Processing the response directory') ;
 
