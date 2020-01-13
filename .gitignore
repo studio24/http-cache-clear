@@ -1,70 +1,10 @@
-# Standard ignore rules
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# IDEs
-nbproject
-.komodotools
-.buildpath
-.project
-.settings
-.idea
-*.sublime-project
-*.sublime-workspace
-
-##
-# Add any project-specific ignore rules here
-# e.g. cache, package, build and file upload folders
-##
-
 # Composer
 vendor
+composer.lock
 
-# Bower
-bower_components
-
-# NPM
-node_modules
-npm-debug.log
-
-# Yarn
-yarn-error.log
-
-# SASS
-.sass_cache
-
-# Wordpress
-# Account for plugins that include a vendor directory but no composer.json file
-!web/wp-content/plugins/**/vendor
-
-# Laravel
-.env
-storage/*.key
-public/hot
-public/storage
-
-
-/.web-server-pid
-/app/config/parameters.yml
-/build/
+# PHP Unit
 /phpunit.xml
-/var/*
-!/var/cache
-/var/cache/*
-!var/cache/.gitkeep
-!/var/logs
-/var/logs/*
-!var/logs/.gitkeep
-!/var/sessions
-/var/sessions/*
-!var/sessions/.gitkeep
-!var/SymfonyRequirements.php
-/vendor/
-/web/bundles/
+!/tests/tmp
+!/tests/tmp/.gitkeep
+.phpunit.result.cache
+tests/tmp
