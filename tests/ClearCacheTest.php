@@ -118,5 +118,4 @@ final class ClearCacheTest extends TestCase
         $filesystem = new Filesystem();
         $filesystem->remove($cacheFolder);
     }
-
 }

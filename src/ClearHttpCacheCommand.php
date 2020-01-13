@@ -50,7 +50,6 @@ class ClearHttpCacheCommand extends Command
 
         $this->now =  new \DateTime("now");
         $this->filesystem = new Filesystem();
-
     }
 
     protected function configure()
@@ -103,7 +102,7 @@ EOD;
         }
         $this->directoryPath .= '/' . $this->environment . '/' . self::HTTP_CACHE_FOLDER;
         if (!is_dir($this->directoryPath)) {
-            $output->writeln( '<info>No http_cache folder found, exiting!</info>');
+            $output->writeln('<info>No http_cache folder found, exiting!</info>');
             return;
         }
 
@@ -121,8 +120,7 @@ EOD;
         $responseFilesArray = [];
 
         // Iterating recursively over filesystem directories
-        foreach ($iterator as $fileInfo ) {
-
+        foreach ($iterator as $fileInfo) {
             // Skip the folder names that are "." or ".."
             if (($fileInfo->getFilename() === '.') || ($fileInfo->getFilename() === '..')) {
                 continue;
@@ -134,7 +132,6 @@ EOD;
 
             // Find the metadata files
             if (strpos($fileInfo->getPathname(), '/' . self::METADATA_FOLDER . '/') !== false) {
-
                 $output->writeln('Processing the metadata directory') ;
 
                 // Read the content of the metadata file
@@ -171,7 +168,6 @@ EOD;
                 if (!is_file($linkedResponseFilePath)) {
                     $output->writeln('No response file found.');
                 } else {
-
                     $responseFilesArray[] = $linkedResponseFilePath;
 
                     // Delete the linked response file if it exists
@@ -201,12 +197,10 @@ EOD;
 
             // Find the response files
             if (strpos($fileInfo->getPathname(), '/' . self::RESPONSE_FOLDER . '/') !== false) {
-
                 $output->writeln('Processing the response directory') ;
 
 
-                if (!in_array($fileInfo->getPathname(),$responseFilesArray)) {
-
+                if (!in_array($fileInfo->getPathname(), $responseFilesArray)) {
                     // Delete the response files that do not have a corresponding metadata file
                     if (!$dryRun) {
                         $output->writeln('Deleting the response file with no corresponding metadata file: ' . $fileInfo->getPathname());
@@ -255,7 +249,5 @@ EOD;
         $responseFilePath = implode('/', $responseDirectoryArray).'/'. $responseFileName;
 
         return $responseFilePath;
-
     }
-
 }
