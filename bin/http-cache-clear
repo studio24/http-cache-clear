@@ -8,7 +8,7 @@ error_reporting(E_ALL ^ E_NOTICE);
 ini_set('display_errors',true);
 
 // Composer
-$composer = [__DIR__ . '/../../', __DIR__ . '/../../../', __DIR__ . '/../', __DIR__ . '/'];
+$composer = [__DIR__ . '/../', __DIR__ . '/../../../../', __DIR__ . '/../../', __DIR__ . '/'];
 foreach ($composer as $file) {
     if (file_exists($file . 'vendor/autoload.php')) {
         require_once $file . 'vendor/autoload.php';
