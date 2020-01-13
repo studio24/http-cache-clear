@@ -153,34 +153,31 @@ EOD;
                 // Get the total number of hours from the interval
                 $hours = $interval->h + ($interval->days*24);
 
-                // Delete expired files that are over the number of hours we specified in the command
-                if ($hours <= $this->expirationHours) {
-                    continue;
-                }
-
-                $output->writeln('Found old cached files. Starting the deletion process...');
-
-                $output->writeln('Searching for the corresponding response file...');
-
                 // Find the corresponding response file
                 $linkedResponseFilePath = $this->directoryPath . '/' . $this->getLinkedResponseFileFromMetadata($metadata);
 
                 if (!is_file($linkedResponseFilePath)) {
                     $output->writeln('No response file found.');
-                } else {
-                    $responseFilesArray[] = $linkedResponseFilePath;
-
-                    // Delete the linked response file if it exists
-                    if (!$dryRun) {
-                        $output->writeln('Deleting corresponding response file: ' . $linkedResponseFilePath);
-                        $this->filesystem->remove($linkedResponseFilePath);
-                    } else {
-                        $output->writeln('Found response file to delete (dry-run mode): ' . $linkedResponseFilePath);
-                    }
-
-                    // Increase the number of files deleted
-                    $this->deleteCount['response']++;
+                    continue;
                 }
+                $responseFilesArray[] = $linkedResponseFilePath;
+
+                // Delete expired files that are over the number of hours we specified in the command
+                if ($hours <= $this->expirationHours) {
+                    continue;
+                }
+                $output->writeln('Found old cached files. Starting the deletion process...');
+
+                // Delete the linked response file if it exists
+                if (!$dryRun) {
+                    $output->writeln('Deleting corresponding response file: ' . $linkedResponseFilePath);
+                    $this->filesystem->remove($linkedResponseFilePath);
+                } else {
+                    $output->writeln('Found response file to delete (dry-run mode): ' . $linkedResponseFilePath);
+                }
+
+                // Increase the number of files deleted
+                $this->deleteCount['response']++;
 
                 // Delete the metadata file
                 if (!$dryRun) {
