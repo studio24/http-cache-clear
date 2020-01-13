@@ -55,13 +55,26 @@ class ClearHttpCacheCommand extends Command
 
     protected function configure()
     {
+        $help = <<<EOD
+This command allows you to delete the expired files from the Synfony HTTP Cache, when the cache is saved to the filesystem. 
+
+Example usage: 
+./bin/http-cache-clear 
+
+By default this clears the prod cache in var/cache/prod/http_cache for any cached files over 4 hours old. 
+
+You can change this behaviour via options. E.g. to delete prod files over 1 hour old:
+./bin/http-cache-clear --expiry=1
+EOD;
+
         $this
             ->setName('cache-clear')
-            ->setDescription('Clears the Symfony Http Cache')
-            ->setHelp('This command allows you to delete the expired files from the Http Cache, when the cache is saved to the filesystem')
-            ->addOption('path', 'p', InputOption::VALUE_OPTIONAL, 'The path to your cache folder', 'var/cache')
-            ->addOption('env', 'e', InputOption::VALUE_OPTIONAL, 'Environment to clear cache for', 'prod')
-            ->addOption('expiry', null, InputOption::VALUE_OPTIONAL, 'How many hours you want to expire cache files?', 4)
+            ->setDescription('Clears the Symfony HTTP Cache')
+            ->setHelp($help)
+            ->addOption('path', 'p', InputOption::VALUE_REQUIRED, 'The path to your cache folder', 'var/cache')
+            ->addOption('env', 'e', InputOption::VALUE_REQUIRED, 'Environment to clear cache for', 'prod')
+            ->addOption('expiry', null, InputOption::VALUE_REQUIRED, 'How many hours you want to expire cache files?', 4)
+            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Do not delete any files, just report on how many cached files are to be removed')
         ;
     }
 
@@ -75,6 +88,11 @@ class ClearHttpCacheCommand extends Command
         $this->directoryPath = $input->getOption('path');
         $this->environment = $input->getOption('env');
         $this->expirationHours = $input->getOption('expiry');
+        $dryRun = $input->getOption('dry-run');
+
+        if ($dryRun) {
+            $output->writeln('<info>Dry run mode</info>');
+        }
 
         // Cast the output to a property for easy outputting of information.
         $this->output = $output;
@@ -148,7 +166,7 @@ class ClearHttpCacheCommand extends Command
                 $output->writeln('Searching for the corresponding response file...');
 
                 // Find the corresponding response file
-                $linkedResponseFilePath = $this->getLinkedResponseFileFromMetadata($metadata);
+                $linkedResponseFilePath = $this->directoryPath . '/' . $this->getLinkedResponseFileFromMetadata($metadata);
 
                 if (!is_file($linkedResponseFilePath)) {
                     $output->writeln('No response file found.');
@@ -157,16 +175,24 @@ class ClearHttpCacheCommand extends Command
                     $responseFilesArray[] = $linkedResponseFilePath;
 
                     // Delete the linked response file if it exists
-                    $output->writeln('Deleting corresponding response file: ' . $linkedResponseFilePath);
-                    $this->filesystem->remove($linkedResponseFilePath);
+                    if (!$dryRun) {
+                        $output->writeln('Deleting corresponding response file: ' . $linkedResponseFilePath);
+                        $this->filesystem->remove($linkedResponseFilePath);
+                    } else {
+                        $output->writeln('Found response file to delete (dry-run mode): ' . $linkedResponseFilePath);
+                    }
 
                     // Increase the number of files deleted
                     $this->deleteCount['response']++;
                 }
 
                 // Delete the metadata file
-                $output->writeln('Deleting expired metadata file: ' . $fileInfo->getPathname());
-                $this->filesystem->remove($fileInfo->getPathname());
+                if (!$dryRun) {
+                    $output->writeln('Deleting expired metadata file: ' . $fileInfo->getPathname());
+                    $this->filesystem->remove($fileInfo->getPathname());
+                } else {
+                    $output->writeln('Found metadata file to delete (dry-run mode): ' . $fileInfo->getPathname());
+                }
 
                 // Increase the number of files deleted
                 $this->deleteCount['metadata']++;
@@ -179,11 +205,15 @@ class ClearHttpCacheCommand extends Command
                 $output->writeln('Processing the response directory') ;
 
 
-                if(!in_array($fileInfo->getPathname(),$responseFilesArray)) {
+                if (!in_array($fileInfo->getPathname(),$responseFilesArray)) {
 
                     // Delete the response files that do not have a corresponding metadata file
-                    $output->writeln('Deleting the response file with no corresponding metadata file: ' . $fileInfo->getPathname());
-                    $this->filesystem->remove($fileInfo->getPathname());
+                    if (!$dryRun) {
+                        $output->writeln('Deleting the response file with no corresponding metadata file: ' . $fileInfo->getPathname());
+                        $this->filesystem->remove($fileInfo->getPathname());
+                    } else {
+                        $output->writeln('Found response file to delete with no corresponding metadata file (dry-run): ' . $fileInfo->getPathname());
+                    }
 
                     // Increase the number of files deleted
                     $this->deleteCount['response']++;
@@ -194,8 +224,13 @@ class ClearHttpCacheCommand extends Command
         $output->writeln($this->deleteCount['response'] . '<info> response files deleted successfully!<info>') ;
         $output->writeln($this->deleteCount['metadata'] . '<info> metadata files deleted successfully!<info>') ;
 
-        $output->writeln('<info>Clearing the HTTP Cache complete!<info>') ;
+        if (!$dryRun) {
+            $output->writeln('<info>Clearing the HTTP Cache complete!<info>');
+        } else {
+            $output->writeln('<info>Finished (dry-run)<info>');
+        }
 
+        return 0;
     }
 
 
@@ -205,20 +240,19 @@ class ClearHttpCacheCommand extends Command
      * @param $metadata
      * @return string
      */
-    protected function getLinkedResponseFileFromMetadata($metadata)
+    public function getLinkedResponseFileFromMetadata($metadata)
     {
         // Getting the reference to the HTTP response file
-        $content = $metadata[0][1]['x-content-digest'];
-
-        if (!$content) {
-            return;
+        if (!isset($metadata[0]) || !isset($metadata[0][1]) || !isset($metadata[0][1]['x-content-digest']) || !isset($metadata[0][1]['x-content-digest'][0])) {
+            return null;
         }
+        $content = $metadata[0][1]['x-content-digest'][0];
 
         // Get first 6 characters and build the response file path from the content reference
-        $responseDirectoryArray = str_split(substr($content[0], 0, 6), 2);
-        $responseFileName = substr($content[0], 6);
+        $responseDirectoryArray = str_split(substr($content, 0, 6), 2);
+        $responseFileName = substr($content, 6);
 
-        $responseFilePath = $this->directoryPath . '/'. implode('/', $responseDirectoryArray).'/'. $responseFileName;
+        $responseFilePath = implode('/', $responseDirectoryArray).'/'. $responseFileName;
 
         return $responseFilePath;
 

@@ -15,8 +15,7 @@ Install via [Composer](https://getcomposer.org/):
 ```
 composer require studio24/http-cache-clear
 ```
-
-
+    
 ## Usage
 
 Display help text:
@@ -42,6 +41,20 @@ The default is to clear all files older than 4 hours. You can change this by pas
 
 ```
 http-cache-clear var/cache/prod/http_cache --hours 24 
+```
+
+## Tests
+
+Run phpunit:
+
+```
+./vendor/bin/phpunit
+```
+
+Run codesniffer:
+
+```
+./vendor/bin/phpcs
 ```
 
 ## License

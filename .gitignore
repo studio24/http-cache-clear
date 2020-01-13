@@ -6,3 +6,5 @@ composer.lock
 /phpunit.xml
 !/tests/tmp
 !/tests/tmp/.gitkeep
+.phpunit.result.cache
+tests/tmp
